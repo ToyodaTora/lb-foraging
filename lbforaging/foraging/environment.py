@@ -96,20 +96,6 @@ class ForagingEnv(gym.Env):
         penalty=0.0,
         render_mode=None,
     ):
-        print("players",players)
-        print("min_player_level",min_player_level)
-        print("max_player_level",max_player_level)
-        print("min_food_level",min_food_level)
-        print("max_food_level",max_food_level)
-        print("field_size",field_size)
-        print("max_num_food",max_num_food)
-        print("sight",sight)
-        print("max_episode_steps",max_episode_steps)
-        print("_max_episode_steps",_max_episode_steps)
-        print("force_coop",force_coop)
-        print("max_episode_steps:",max_episode_steps)
-        print("self.spec.max_episode_steps",self.spec.max_episode_steps)
-
         self.logger = logging.getLogger(__name__)
         self.render_mode = render_mode
         self.players = [Player() for _ in range(players)]
