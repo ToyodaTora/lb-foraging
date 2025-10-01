@@ -266,7 +266,7 @@ class ForagingEnv(gym.Env):
             field_size=None,
             max_num_food=None,
             sight=None,
-            max_episode_steps=200,
+            max_episode_steps=50,
             force_coop=False,
         )
 
