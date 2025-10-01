@@ -88,6 +88,7 @@ class ForagingEnv(gym.Env):
         max_num_food,
         sight,
         max_episode_steps,
+        _max_episode_steps,
         force_coop,
         normalize_reward=True,
         grid_observation=False,
@@ -106,6 +107,7 @@ class ForagingEnv(gym.Env):
         print("max_episode_steps",max_episode_steps)
         print("force_coop",force_coop)
         print("max_episode_steps:",max_episode_steps)
+        print("self.spec.max_episode_steps",self.spec.max_episode_steps)
 
         self.logger = logging.getLogger(__name__)
         self.render_mode = render_mode
@@ -176,8 +178,8 @@ class ForagingEnv(gym.Env):
 
         self._rendering_initialized = False
         self._valid_actions = None
-        self._max_episode_steps = max_episode_steps
-        self._max_episode_steps = raw_env.spec.max_episode_steps
+        # self._max_episode_steps = max_episode_steps
+        self._max_episode_steps = _max_episode_steps
 
         self._normalize_reward = normalize_reward
         self._grid_observation = grid_observation
