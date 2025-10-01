@@ -696,6 +696,9 @@ class ForagingEnv(gym.Env):
             # and the food is removed
             self.field[frow, fcol] = 0
 
+        print("self._max_episode_steps:",self._max_episode_steps)
+        print("self.current_step:",self.current_step)
+        
         self._game_over = (
             self.field.sum() == 0 or self._max_episode_steps <= self.current_step
         )
