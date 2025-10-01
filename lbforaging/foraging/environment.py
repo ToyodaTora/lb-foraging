@@ -95,6 +95,9 @@ class ForagingEnv(gym.Env):
         penalty=0.0,
         render_mode=None,
     ):
+
+        print("max_episode_steps:",max_episode_steps)
+
         self.logger = logging.getLogger(__name__)
         self.render_mode = render_mode
         self.players = [Player() for _ in range(players)]
@@ -166,9 +169,6 @@ class ForagingEnv(gym.Env):
         self._valid_actions = None
         self._max_episode_steps = max_episode_steps
         
-        print("self._max_episode_steps:",self._max_episode_steps)
-        print("max_episode_steps:",max_episode_steps)
-
         self._normalize_reward = normalize_reward
         self._grid_observation = grid_observation
         self._observe_agent_levels = observe_agent_levels
