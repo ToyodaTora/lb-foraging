@@ -105,6 +105,7 @@ class ForagingEnv(gym.Env):
         print("max_num_food",max_num_food)
         print("sight",sight)
         print("max_episode_steps",max_episode_steps)
+        print("_max_episode_steps",_max_episode_steps)
         print("force_coop",force_coop)
         print("max_episode_steps:",max_episode_steps)
         print("self.spec.max_episode_steps",self.spec.max_episode_steps)
