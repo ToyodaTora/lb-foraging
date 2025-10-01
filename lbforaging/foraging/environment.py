@@ -97,6 +97,8 @@ class ForagingEnv(gym.Env):
     ):
 
         print("max_episode_steps:",max_episode_steps)
+        print("field_size:",field_size)
+        print("players:",players)
 
         self.logger = logging.getLogger(__name__)
         self.render_mode = render_mode
