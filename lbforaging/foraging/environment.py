@@ -88,6 +88,7 @@ class ForagingEnv(gym.Env):
         max_num_food,
         sight,
         max_episode_steps,
+        _max_episode_steps,
         force_coop,
         normalize_reward=True,
         grid_observation=False,
@@ -164,7 +165,8 @@ class ForagingEnv(gym.Env):
 
         self._rendering_initialized = False
         self._valid_actions = None
-        self._max_episode_steps = max_episode_steps
+        # self._max_episode_steps = max_episode_steps
+        self._max_episode_steps = _max_episode_steps
 
         self._normalize_reward = normalize_reward
         self._grid_observation = grid_observation
@@ -695,6 +697,9 @@ class ForagingEnv(gym.Env):
                     )  # normalize reward
             # and the food is removed
             self.field[frow, fcol] = 0
+
+        # print("self._max_episode_steps:",self._max_episode_steps)
+        # print("self.current_step:",self.current_step)
 
         self._game_over = (
             self.field.sum() == 0 or self._max_episode_steps <= self.current_step
