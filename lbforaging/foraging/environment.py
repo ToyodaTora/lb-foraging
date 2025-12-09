@@ -98,7 +98,7 @@ class ForagingEnv(gym.Env):
         observe_agent_levels=False,
         penalty=0.0,
         render_mode=None,
-        is_variable_n=False, #ADD1:可変エージェントを有効にするかどうか
+        is_variableN=False, #ADD1:可変エージェントを有効にするかどうか
         remove_agent_prov=0.0001, #ADD1:エピソード中にエージェントを削除する確率
         create_agent_prov=0.0001 #ADD1:最小のプレイヤー人数を指定
     ):
@@ -111,7 +111,7 @@ class ForagingEnv(gym.Env):
         self.max_agents = players #ADD1:最大エージェント数
         self.min_agents = min_players #ADD1:最小エージェント数
         self.n_agent = self.max_agents #ADD1:有効とするエージェント数
-        self.is_variable_n = is_variable_n #ADD1:エージェントを可変とするかどうか
+        self.is_variableN = is_variableN #ADD1:エージェントを可変とするかどうか
 
         self.remove_agent_prov = remove_agent_prov #ADD1:エピソード中にエージェントを削除する確率
         self.create_agent_prov = create_agent_prov #ADD1:エピソード中にエージェントを生成する確率
@@ -594,7 +594,7 @@ class ForagingEnv(gym.Env):
             # setting seed
             super().reset(seed=seed, options=options)
 
-        if self.is_variable_N == True: #ADD1:エージェント可変が有効ならランダムに数を決定＆初期化
+        if self.is_variableN == True: #ADD1:エージェント可変が有効ならランダムに数を決定＆初期化
             self.n_agent = np.random.randint(self.min_agents, self.max_agents) #ADD1:有効エージェントの数を決定
             possible_agent_ids = np.sort(np.random.choice(self.max_agents, size=self.n_agent, replace=False)) #ADD1:有効とするエージェントIDをランダムに決定
 
@@ -632,9 +632,9 @@ class ForagingEnv(gym.Env):
         self.current_step += 1
 
         if np.random.random() < self.remove_agent_prov: #ADD1:決まった確率でエージェントを削除する処理
-            self.remove_agent()
+            self.remove_one_agent()
         if np.random.random() < self.create_agent_prov: #ADD1:決まった確率でエージェントを生成する処理
-            self.create_agent()
+            self.spawn_one_agent()
 
         for p in self.players:
             p.reward = 0
@@ -771,7 +771,7 @@ class ForagingEnv(gym.Env):
             return False
         return True
 
-    def remove_agent(self): #ADD1:エージェントを無効化する処理
+    def remove_one_agent(self): #ADD1:エージェントを無効化する処理
         possible_agents = []
         impossible_agent = []
         for agent_id in range(len(self.players)):
