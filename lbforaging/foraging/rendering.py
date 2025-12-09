@@ -196,15 +196,16 @@ class Viewer(object):
         batch = pyglet.graphics.Batch()
 
         for player in env.players:
-            row, col = player.position
-            players.append(
-                pyglet.sprite.Sprite(
-                    self.img_agent,
-                    (self.grid_size + 1) * col,
-                    self.height - (self.grid_size + 1) * (row + 1),
-                    batch=batch,
+            if player.is_possible == True: #ADD:有効エージェントなら描画
+                row, col = player.position
+                players.append(
+                    pyglet.sprite.Sprite(
+                        self.img_agent,
+                        (self.grid_size + 1) * col,
+                        self.height - (self.grid_size + 1) * (row + 1),
+                        batch=batch,
+                    )
                 )
-            )
         for p in players:
             p.update(scale=self.grid_size / p.width)
         batch.draw()

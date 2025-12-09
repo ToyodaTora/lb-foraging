@@ -27,7 +27,7 @@ class CellEntity(Enum):
 
 
 class Player:
-    def __init__(self):
+    def __init__(self, id):
         self.controller = None
         self.position = None
         self.level = None
@@ -36,6 +36,8 @@ class Player:
         self.reward = 0
         self.history = None
         self.current_step = None
+        self.is_possible = False
+        self.agent_id = "agent_" + str(id) #ADD1:なんとなく，pettingzooなどで使われているエージェントIDを追加実装
 
     def setup(self, position, level, field_size):
         self.history = []
@@ -80,6 +82,7 @@ class ForagingEnv(gym.Env):
     def __init__(
         self,
         players,
+        min_players, #ADD1:最小のプレイヤー人数を指定
         min_player_level,
         max_player_level,
         min_food_level,
@@ -92,13 +95,26 @@ class ForagingEnv(gym.Env):
         force_coop,
         normalize_reward=True,
         grid_observation=False,
-        observe_agent_levels=True,
+        observe_agent_levels=False,
         penalty=0.0,
         render_mode=None,
+        is_variable_n=False, #ADD1:可変エージェントを有効にするかどうか
+        remove_agent_prov=0.0001, #ADD1:エピソード中にエージェントを削除する確率
+        create_agent_prov=0.0001 #ADD1:最小のプレイヤー人数を指定
     ):
         self.logger = logging.getLogger(__name__)
         self.render_mode = render_mode
-        self.players = [Player() for _ in range(players)]
+        self.players = [Player(i) for i in range(players)]
+        print("agent ids : ",[self.players[i].agent_id for i in range(players)])
+        
+        self.is_possible_agents = [ False for i in range(len(players))] #ADD1:各エージェントが有効かどうかのリスト
+        self.max_agents = players #ADD1:最大エージェント数
+        self.min_agents = min_players #ADD1:最小エージェント数
+        self.n_agent = self.max_agents #ADD1:有効とするエージェント数
+        self.is_variable_n = is_variable_n #ADD1:エージェントを可変とするかどうか
+
+        self.remove_agent_prov = remove_agent_prov #ADD1:エピソード中にエージェントを削除する確率
+        self.create_agent_prov = create_agent_prov #ADD1:エピソード中にエージェントを生成する確率
 
         self.field = np.zeros(field_size, np.int32)
 
@@ -181,7 +197,6 @@ class ForagingEnv(gym.Env):
 
         self.viewer = None
 
-        self.n_agents = len(self.players)
 
     def seed(self, seed=None):
         if seed is not None:
@@ -249,35 +264,6 @@ class ForagingEnv(gym.Env):
         return gym.spaces.Box(
             low=low_obs, high=high_obs, shape=[len(low_obs)], dtype=np.float32
         )
-
-    @classmethod
-    def from_obs(cls, obs):
-        players = []
-        for p in obs.players:
-            player = Player()
-            player.setup(p.position, p.level, obs.field.shape)
-            player.score = p.score if p.score else 0
-            players.append(player)
-
-        env = cls(
-            players,
-            min_player_level=1,
-            max_player_level=2,
-            min_food_level=1,
-            max_food_level=None,
-            field_size=None,
-            max_num_food=None,
-            sight=None,
-            max_episode_steps=200,
-            force_coop=False,
-        )
-
-        env.field = np.copy(obs.field)
-        env.current_step = obs.current_step
-        env.sight = obs.sight
-        env._gen_valid_moves()
-
-        return env
 
     @property
     def field_size(self):
@@ -397,24 +383,30 @@ class ForagingEnv(gym.Env):
         for player, min_player_level, max_player_level in zip(
             self.players, min_player_levels, max_player_levels
         ):
-            attempts = 0
-            player.reward = 0
+            if player.is_possible == True: #ADD1:もし有効エージェントならエージェントとして生成する．
+                attempts = 0
+                player.reward = 0
 
-            while attempts < 1000:
-                row = self.np_random.integers(0, self.rows)
-                col = self.np_random.integers(0, self.cols)
-                if self._is_empty_location(row, col):
-                    player.setup(
-                        (row, col),
-                        self.np_random.integers(min_player_level, max_player_level + 1),
-                        self.field_size,
-                    )
-                    break
-                attempts += 1
+                while attempts < 1000:
+                    row = self.np_random.integers(0, self.rows)
+                    col = self.np_random.integers(0, self.cols)
+                    if self._is_empty_location(row, col):
+                        player.setup(
+                            (row, col),
+                            self.np_random.integers(min_player_level, max_player_level + 1),
+                            self.field_size,
+                        )
+                        break
+                    attempts += 1
+            else: #ADD1:も無効エージェントならステージ外にいるとして初期化．
+                player.setup((-1, -1), -1, self.field_size)
 
     def _is_valid_action(self, player, action):
+
         if action == Action.NONE:
             return True
+        elif player.is_possible == False: #ADD1:もし無効化エージェントならNONE以外を無効な行動と判定
+            return False
         elif action == Action.NORTH:
             return (
                 player.position[0] > 0
@@ -487,7 +479,7 @@ class ForagingEnv(gym.Env):
         )
 
     def _make_gym_obs(self):
-        def make_obs_array(observation):
+        def make_obs_array(observation, is_possible): #ADD1:新しい引数として無効エージェントかどうかを追加
             obs = np.zeros(self.observation_space[0].shape, dtype=np.float32)
             # obs[: observation.field.size] = observation.field.flatten()
             # self player is always first
@@ -500,10 +492,11 @@ class ForagingEnv(gym.Env):
                 obs[3 * i + 1] = -1
                 obs[3 * i + 2] = 0
 
-            for i, (y, x) in enumerate(zip(*np.nonzero(observation.field))):
-                obs[3 * i] = y
-                obs[3 * i + 1] = x
-                obs[3 * i + 2] = observation.field[y, x]
+            if is_possible == True: #ADD1:無効エージェントならばスキップ
+                for i, (y, x) in enumerate(zip(*np.nonzero(observation.field))):
+                    obs[3 * i] = y
+                    obs[3 * i + 1] = x
+                    obs[3 * i + 2] = observation.field[y, x]
 
             player_obs_len = 3 if self._observe_agent_levels else 2
             for i in range(len(self.players)):
@@ -512,11 +505,12 @@ class ForagingEnv(gym.Env):
                 if self._observe_agent_levels:
                     obs[self.max_num_food * 3 + player_obs_len * i + 2] = 0
 
-            for i, p in enumerate(seen_players):
-                obs[self.max_num_food * 3 + player_obs_len * i] = p.position[0]
-                obs[self.max_num_food * 3 + player_obs_len * i + 1] = p.position[1]
-                if self._observe_agent_levels:
-                    obs[self.max_num_food * 3 + player_obs_len * i + 2] = p.level
+            if is_possible == True: #ADD1:無効エージェントならばスキップ
+                for i, p in enumerate(seen_players):
+                    obs[self.max_num_food * 3 + player_obs_len * i] = p.position[0]
+                    obs[self.max_num_food * 3 + player_obs_len * i + 1] = p.position[1]
+                    if self._observe_agent_levels:
+                        obs[self.max_num_food * 3 + player_obs_len * i + 2] = p.level
 
             return obs
 
@@ -581,8 +575,8 @@ class ForagingEnv(gym.Env):
                     for start_x, end_x, start_y, end_y in agents_bounds
                 ]
             )
-        else:
-            nobs = tuple([make_obs_array(obs) for obs in observations])
+        else: #ADD1:観測生成の関数の引数に，エージェントが有効かどうかを追加
+            nobs = tuple([make_obs_array(obs, self.is_possible_agents[i]) for i, obs in enumerate(observations)])
 
         # check the space of obs
         for i, obs in enumerate(nobs):
@@ -599,6 +593,22 @@ class ForagingEnv(gym.Env):
         if seed is not None:
             # setting seed
             super().reset(seed=seed, options=options)
+
+        if self.is_variable_N == True: #ADD1:エージェント可変が有効ならランダムに数を決定＆初期化
+            self.n_agent = np.random.randint(self.min_agents, self.max_agents) #ADD1:有効エージェントの数を決定
+            possible_agent_ids = np.sort(np.random.choice(self.max_agents, size=self.n_agent, replace=False)) #ADD1:有効とするエージェントIDをランダムに決定
+
+            self.is_possible_agents = [ False for i in range(len(self.players))] #ADD1:各エージェントが有効かどうかを初期化
+            for i in range(len(self.players)): #ADD1:各エージェントが有効かどうかを初期化 ←これ2種類の変数で管理する必要ある？
+                self.players[i].is_possible = False
+            for id in possible_agent_ids: #ADD1:エージェントを有効化
+                self.is_possible_agents[id] = True
+                self.players[id].is_possible = True
+        else: #ADD1:エージェント可変が無効なら全エージェントを有効にする
+            self.n_agent = self.max_agents #ADD1:有効エージェントの数を決定
+            self.is_possible_agents = [ True for i in range(len(self.players))] #ADD1:各エージェントが有効かどうかを初期化
+            for i in range(len(self.players)): #ADD1:各エージェントが有効かどうかを初期化 ←これ2種類の変数で管理する必要ある？
+                self.players[i].is_possible = True
 
         self.field = np.zeros(self.field_size, np.int32)
         self.spawn_players(self.min_player_level, self.max_player_level)
@@ -621,6 +631,11 @@ class ForagingEnv(gym.Env):
     def step(self, actions):
         self.current_step += 1
 
+        if np.random.random() < self.remove_agent_prov: #ADD1:決まった確率でエージェントを削除する処理
+            remove_agent()
+        if np.random.random() < self.create_agent_prov: #ADD1:決まった確率でエージェントを生成する処理
+            create_agent()
+
         for p in self.players:
             p.reward = 0
 
@@ -628,6 +643,18 @@ class ForagingEnv(gym.Env):
             Action(a) if Action(a) in self._valid_actions[p] else Action.NONE
             for p, a in zip(self.players, actions)
         ]
+        for id in range(len(self.players)):
+            print("agent_id : ", self.players[id], " possible : ", self.is_possible[id], " action : ", actions[id], " falseのagentの行動が0となっているか確認")
+
+        #ADD1:無効エージェントがステイ以外の行動を取ろうとしている場合にプリント
+        for i, (player, action) in enumerate(zip(self.players, actions)):
+            if player.is_possible == False and action != Action.NONE:
+                self.logger.info(
+                    "Invalid agent {}{} attempted invalid action {}.".format(
+                        player.name, player.position, action
+                    )
+                )
+                actions[i] = Action.NONE
 
         # check if actions are valid
         for i, (player, action) in enumerate(zip(self.players, actions)):
@@ -706,7 +733,7 @@ class ForagingEnv(gym.Env):
         )
         self._gen_valid_moves()
 
-        for p in self.players:
+        for p in self.players: #ADD1:ADDというかメモ，ここのp.scoreってどこにも使われてなくない？
             p.score += p.reward
 
         rewards = [p.reward for p in self.players]
@@ -743,3 +770,70 @@ class ForagingEnv(gym.Env):
         except Exception as _:
             return False
         return True
+
+    def remove_agent(self): #ADD1:エージェントを無効化する処理
+        possible_agents = []
+        impossible_agent = []
+        for agent_id in range(len(self.players)):
+            if self.is_possibles[agent_id] == True:
+                possible_agents.append(agent_id)
+            else:
+                impossible_agent.append(agent_id)
+
+        if len(possible_agents) == 2: #もし現在の有効エージェントが２体ならエージェント削除をスキップ
+            return 0
+        removed_id = np.random.choice(possible_agents)
+
+        self.is_possibles[removed_id] = False
+        self.players[removed_id].is_possible = False
+
+        self.players[removed_id].position = (-1, -1)
+        self.players[removed_id].level = -1
+        self.players[removed_id].reward = 0
+        self.players[removed_id].is_possible = False
+        self.players[removed_id].history = []
+        self.players[removed_id].controller = None
+        self.players[removed_id].current_step = self.current_step
+
+        return None
+
+    def spawn_one_agent(self, min_player_levels, max_player_levels): #ADD1:エージェントを有効化する処理
+
+        possible_agents = []
+        impossible_agent = []
+        for agent_id in range(len(self.players)):
+            if self.is_possibles[agent_id] == True:
+                possible_agents.append(agent_id)
+            else:
+                impossible_agent.append(agent_id)
+
+        if len(possible_agents) == 0: #もし現在の無効エージェントが０体ならエージェント削除をスキップ
+            return 0
+        spawn_id = np.random.choice(impossible_agent)
+
+        self.is_possibles[spawn_id] = True
+        self.players[spawn_id].is_possible = True
+
+        # permute player levels
+        player_permutation = self.np_random.permutation(len(self.players))
+        min_player_levels = min_player_levels[player_permutation]
+        max_player_levels = max_player_levels[player_permutation]
+
+        
+        if self.players[spawn_id].is_possible == True: #ADD1:もし有効エージェントならエージェントとして生成する．
+            attempts = 0
+            self.players[spawn_id].reward = 0
+
+            while attempts < 1000:
+                row = self.np_random.integers(0, self.rows)
+                col = self.np_random.integers(0, self.cols)
+                if self._is_empty_location(row, col):
+                    self.players[spawn_id].setup(
+                        (row, col),
+                        self.np_random.integers(min_player_levels[spawn_id], max_player_levels[spawn_id] + 1),
+                        self.field_size,
+                    )
+                    break
+                attempts += 1
+        else: #ADD1:も無効エージェントならステージ外にいるとして初期化．
+            self.players[spawn_id].setup((-1, -1), -1, self.field_size)
