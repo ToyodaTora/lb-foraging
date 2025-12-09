@@ -775,7 +775,7 @@ class ForagingEnv(gym.Env):
         possible_agents = []
         impossible_agent = []
         for agent_id in range(len(self.players)):
-            if self.is_possibles[agent_id] == True:
+            if self.is_possible_agents[agent_id] == True:
                 possible_agents.append(agent_id)
             else:
                 impossible_agent.append(agent_id)
@@ -784,7 +784,8 @@ class ForagingEnv(gym.Env):
             return 0
         removed_id = np.random.choice(possible_agents)
 
-        self.is_possibles[removed_id] = False
+        self.n_agent -= 1
+        self.is_possible_agents[removed_id] = False
         self.players[removed_id].is_possible = False
 
         self.players[removed_id].position = (-1, -1)
@@ -802,7 +803,7 @@ class ForagingEnv(gym.Env):
         possible_agents = []
         impossible_agent = []
         for agent_id in range(len(self.players)):
-            if self.is_possibles[agent_id] == True:
+            if self.is_possible_agents[agent_id] == True:
                 possible_agents.append(agent_id)
             else:
                 impossible_agent.append(agent_id)
@@ -811,7 +812,8 @@ class ForagingEnv(gym.Env):
             return 0
         spawn_id = np.random.choice(impossible_agent)
 
-        self.is_possibles[spawn_id] = True
+        self.n_agent += 1
+        self.is_possible_agents[spawn_id] = True
         self.players[spawn_id].is_possible = True
 
         # permute player levels
