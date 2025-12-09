@@ -632,9 +632,9 @@ class ForagingEnv(gym.Env):
         self.current_step += 1
 
         if np.random.random() < self.remove_agent_prov: #ADD1:決まった確率でエージェントを削除する処理
-            remove_agent()
+            self.remove_agent()
         if np.random.random() < self.create_agent_prov: #ADD1:決まった確率でエージェントを生成する処理
-            create_agent()
+            self.create_agent()
 
         for p in self.players:
             p.reward = 0
