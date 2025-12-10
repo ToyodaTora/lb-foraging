@@ -644,7 +644,7 @@ class ForagingEnv(gym.Env):
             for p, a in zip(self.players, actions)
         ]
         for id in range(len(self.players)):
-            print("agent_id : ", self.players[id], " possible : ", self.is_possible[id], " action : ", actions[id], " falseのagentの行動が0となっているか確認")
+            print("agent_id : ", self.players[id], " possible : ", self.is_possible_agents[id], " action : ", actions[id], " falseのagentの行動が0となっているか確認")
 
         #ADD1:無効エージェントがステイ以外の行動を取ろうとしている場合にプリント
         for i, (player, action) in enumerate(zip(self.players, actions)):
