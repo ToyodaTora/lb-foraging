@@ -819,30 +819,26 @@ class ForagingEnv(gym.Env):
             return 0
         spawn_id = np.random.choice(impossible_agent)
 
-        self.n_agent += 1
-        self.is_possible_agents[spawn_id] = True
-        self.players[spawn_id].is_possible = True
+        attempts = 0
+        while attempts < 1000:
+            row = self.np_random.integers(0, self.rows)
+            col = self.np_random.integers(0, self.cols)
+            if self._is_empty_location(row, col):
+                self.n_agent += 1
+                self.is_possible_agents[spawn_id] = True
+                self.players[spawn_id].is_possible = True
 
-        # permute player levels
-        player_permutation = self.np_random.permutation(len(self.players))
-        min_player_levels = min_player_levels[player_permutation]
-        max_player_levels = max_player_levels[player_permutation]
+                self.players[spawn_id].reward = 0
 
-        
-        if self.players[spawn_id].is_possible == True: #ADD1:もし有効エージェントならエージェントとして生成する．
-            attempts = 0
-            self.players[spawn_id].reward = 0
-
-            while attempts < 1000:
-                row = self.np_random.integers(0, self.rows)
-                col = self.np_random.integers(0, self.cols)
-                if self._is_empty_location(row, col):
-                    self.players[spawn_id].setup(
-                        (row, col),
-                        self.np_random.integers(min_player_levels[spawn_id], max_player_levels[spawn_id] + 1),
-                        self.field_size,
-                    )
-                    break
-                attempts += 1
-        else: #ADD1:も無効エージェントならステージ外にいるとして初期化．
-            self.players[spawn_id].setup((-1, -1), -1, self.field_size)
+                # permute player levels
+                player_permutation = self.np_random.permutation(len(self.players))
+                min_player_levels = min_player_levels[player_permutation]
+                max_player_levels = max_player_levels[player_permutation]
+                
+                self.players[spawn_id].setup(
+                    (row, col),
+                    self.np_random.integers(min_player_levels[spawn_id], max_player_levels[spawn_id] + 1),
+                    self.field_size,
+                )
+                break
+            attempts += 1
