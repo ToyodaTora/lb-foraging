@@ -780,7 +780,9 @@ class ForagingEnv(gym.Env):
             else:
                 impossible_agent.append(agent_id)
 
-        if len(possible_agents) == 2: #もし現在の有効エージェントが２体ならエージェント削除をスキップ
+        if len(possible_agents) == self.min_agents: #ADD1:もし現在の有効エージェントが設定した最小エージェント数ならエージェント削除をスキップ
+            return 0
+        elif len(possible_agents) == 2: #ADD1:もし現在の有効エージェントが２体ならエージェント削除をスキップ
             return 0
         removed_id = np.random.choice(possible_agents)
 
@@ -809,6 +811,8 @@ class ForagingEnv(gym.Env):
                 impossible_agent.append(agent_id)
 
         if len(possible_agents) == 0: #もし現在の無効エージェントが０体ならエージェント削除をスキップ
+            return 0
+        elif len(possible_agents) == self.max_agents: #ADD1:もし現在の有効エージェントが設定した最大エージェント数ならエージェント削除をスキップ
             return 0
         spawn_id = np.random.choice(impossible_agent)
 
