@@ -646,8 +646,6 @@ class ForagingEnv(gym.Env):
             Action(a) if Action(a) in self._valid_actions[p] else Action.NONE
             for p, a in zip(self.players, actions)
         ]
-        for id in range(len(self.players)):
-            print("agent_id : ", self.players[id], " possible : ", self.is_possible_agents[id], " action : ", actions[id], " falseのagentの行動が0となっているか確認")
 
         #ADD1:無効エージェントがステイ以外の行動を取ろうとしている場合にプリント
         for i, (player, action) in enumerate(zip(self.players, actions)):
@@ -801,6 +799,7 @@ class ForagingEnv(gym.Env):
         self.players[removed_id].controller = None
         self.players[removed_id].current_step = self.current_step
 
+        self._gen_valid_moves()
         return None
 
     def spawn_one_agent(self, min_player_levels, max_player_levels): #ADD1:エージェントを有効化する処理
@@ -834,11 +833,12 @@ class ForagingEnv(gym.Env):
                 player_permutation = self.np_random.permutation(len(self.players))
                 min_player_levels = min_player_levels[player_permutation]
                 max_player_levels = max_player_levels[player_permutation]
-                
+
                 self.players[spawn_id].setup(
                     (row, col),
                     self.np_random.integers(min_player_levels[spawn_id], max_player_levels[spawn_id] + 1),
                     self.field_size,
                 )
+                self._gen_valid_moves()
                 break
             attempts += 1

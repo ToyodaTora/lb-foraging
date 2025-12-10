@@ -54,6 +54,7 @@ def check_disabled_obs_strict(env):
 def test_load_exclusion(env):
     print("\nTEST: LOAD calculation excludes disabled agents")
     env.reset(seed=3)
+  
     enabled_ids = [i for i,x in enumerate(env.is_possible_agents) if x]
     if len(enabled_ids) < 2:
         print(" Not enough enabled agents to run this test; abort.")
@@ -62,8 +63,9 @@ def test_load_exclusion(env):
     a1, a2 = enabled_ids[:2]
     env.field[:] = 0
     # Use environment's max_food_level so we don't violate observation_space
-    food_level = int(env.field.max())  # field の最大 food level を採用
+    food_level = 2  # field の最大 food level を採用
     env.field[2,2] = food_level  # require both agents if sum of levels < food_level
+
     env.players[a1].position = (2,1)
     env.players[a2].position = (2,3)
     env.players[a1].level = 1
@@ -75,17 +77,39 @@ def test_load_exclusion(env):
     env.is_possible_agents[a2] = False
     env.players[a2].is_possible = False
     actions = [0]*len(env.players)
+    nobs, rewards, done, trunc, info = env.step(actions)
     actions[a1] = 5  # LOAD
     nobs, rewards, done, trunc, info = env.step(actions)
     no_load = env.field[2,2] == food_level
-    simple_assert(no_load, "Food not loaded when one adjacent agent is disabled (expected)")
+    simple_assert(no_load, "Food not loaded when one adjacent agentdisabled (expected)")
+
+    # a = False
+    # for y in range(6):
+    #     print("  ", end="")
+    #     for x in range(6):
+    #         for p in env.players:
+    #             if p.position == (y, x):
+    #                 print("x ", end="")
+    #                 a = True
+    #                 break
+    #         if a == False:
+    #             print(str(env.field[y][x])+" ", end="")
+    #         else:
+    #             a = False
+    #     print("")
 
     # now enable a2 again and attempt load with both LOAD actions
     env.is_possible_agents[a2] = True
     env.players[a2].is_possible = True
     actions = [0]*len(env.players)
+    nobs, rewards, done, trunc, info = env.step(actions)
+    # print("")
     actions[a1] = 5
     actions[a2] = 5
+
+    # for i, p in enumerate(env.players):
+    #     print(p.agent_id, " ", p.is_possible, " ", env.is_possible_agents[i], " act:", actions[i], " pos:", p.position)
+    
     nobs2, rewards2, done2, trunc2, info2 = env.step(actions)
     loaded = env.field[2,2] == 0
     simple_assert(loaded, "Food loaded when both adjacent agents enabled (expected)")
@@ -103,9 +127,9 @@ def check_disabled_not_in_seen_players(env):
         if not env.is_possible_agents[i]:
             continue
         for po in pobs.players:
-            # po.position is a neighborhood-transformed coordinate; disabled ones should be filtered out
+            # po.positiona neighborhood-transformed coordinate; disabled ones should be filtered out
             # But check: if any player in global list has position (-1,-1), verify it was not included
-            # Convert neighborhood transform back is hard; instead check by comparing original players list
+            # Convert neighborhood transform backhard; instead check by comparing original players list
             # We'll check that no po.is_self==False corresponds to a player with global position (-1,-1)
             if not po.is_self:
                 # search actual player with same (level, history length) to detect match to disabled
@@ -113,7 +137,7 @@ def check_disabled_not_in_seen_players(env):
                 if min(po.position) < 0:
                     # negative neighborhood coordinates mean out-of-sight — likely safe
                     continue
-                # if neighborhood position is non-negative, it's a visible player; safe to accept
+                # if neighborhood positionnon-negative, it's a visible player; safe to accept
     print("  (heuristic check complete -- see notes)")
     return ok
 
@@ -125,7 +149,7 @@ def test_spawn_boundaries(env):
     initial_possible = sum(1 for x in env.is_possible_agents if x)
     # First make sure some disabled exist to spawn; if all possible, disable one
     if all(env.is_possible_agents):
-        env.remove_agent()
+        env.remove_one_agent()
     # now repeatedly spawn until no more can be spawned or until > max_agents
     spawned = 0
     for i in range(10):
@@ -141,7 +165,7 @@ def test_spawn_boundaries(env):
     removed = 0
     for i in range(10):
         before = sum(1 for x in env.is_possible_agents if x)
-        res = env.remove_agent()
+        res = env.remove_one_agent()
         after = sum(1 for x in env.is_possible_agents if x)
         if after < before:
             removed += 1
@@ -180,11 +204,13 @@ def main():
         env.create_agent = lambda : env.spawn_one_agent(env.min_player_level, env.max_player_level)
 
     try:
+
         ok1 = check_disabled_obs_strict(env)
         ok2 = check_disabled_not_in_seen_players(env)
         ok3 = test_load_exclusion(env)
         ok4 = test_spawn_boundaries(env)
         print("\nAdditional tests finished. Results summary:", ok1, ok2, ok3, ok4)
+
     except Exception:
         traceback.print_exc()
 
