@@ -110,6 +110,9 @@ class ForagingEnv(gym.Env):
         self.is_possible_agents = [ False for _ in range(players)] #ADD1:各エージェントが有効かどうかのリスト
         self.max_agents = players #ADD1:最大エージェント数
         self.min_agents = min_players #ADD1:最小エージェント数
+        assert (
+            self.min_agents > 0
+        ), "too few min_agents!!"
         self.n_agent = self.max_agents #ADD1:有効とするエージェント数
         self.is_variableN = is_variableN #ADD1:エージェントを可変とするかどうか
 
