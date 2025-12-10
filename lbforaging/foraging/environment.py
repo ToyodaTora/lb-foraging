@@ -107,7 +107,7 @@ class ForagingEnv(gym.Env):
         self.players = [Player(i) for i in range(players)]
         print("agent ids : ",[self.players[i].agent_id for i in range(players)])
         
-        self.is_possible_agents = [ False for i in range(len(players))] #ADD1:各エージェントが有効かどうかのリスト
+        self.is_possible_agents = [ False for _ in range(players)] #ADD1:各エージェントが有効かどうかのリスト
         self.max_agents = players #ADD1:最大エージェント数
         self.min_agents = min_players #ADD1:最小エージェント数
         self.n_agent = self.max_agents #ADD1:有効とするエージェント数

@@ -30,11 +30,11 @@ from IPython.display import HTML
 from base64 import b64encode
 from pyvirtualdisplay import Display
 
-import cv2
+# import cv2
 
-display = Display(visible=0, size=(1400, 900))
-display.start()
-frames = []  # 画像フレームの取得用リスト
+# display = Display(visible=0, size=(1400, 900))
+# display.start()
+# frames = []  # 画像フレームの取得用リスト
 
 
 
@@ -152,3 +152,6 @@ class PheromoneField:
 
 #%% '''テスト実行''' 
 
+print("Hello World!!")
+
+# %%
