@@ -637,7 +637,7 @@ class ForagingEnv(gym.Env):
         if np.random.random() < self.remove_agent_prov: #ADD1:決まった確率でエージェントを削除する処理
             self.remove_one_agent()
         if np.random.random() < self.create_agent_prov: #ADD1:決まった確率でエージェントを生成する処理
-            self.spawn_one_agent()
+            self.spawn_one_agent(self.min_player_level, self.max_player_level)
 
         for p in self.players:
             p.reward = 0
