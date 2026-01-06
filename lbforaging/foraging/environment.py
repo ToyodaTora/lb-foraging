@@ -100,7 +100,8 @@ class ForagingEnv(gym.Env):
         render_mode=None,
         is_variableN=False, #ADD1:可変エージェントを有効にするかどうか
         remove_agent_prov=0.0001, #ADD1:エピソード中にエージェントを削除する確率
-        create_agent_prov=0.0001 #ADD1:最小のプレイヤー人数を指定
+        create_agent_prov=0.0001, #ADD1:最小のプレイヤー人数を指定
+        is_random_agent_n_reset=True #ADD:リセット時のエージェント数をランダムにする
     ):
         self.logger = logging.getLogger(__name__)
         self.render_mode = render_mode
@@ -118,7 +119,7 @@ class ForagingEnv(gym.Env):
 
         self.remove_agent_prov = remove_agent_prov #ADD1:エピソード中にエージェントを削除する確率
         self.create_agent_prov = create_agent_prov #ADD1:エピソード中にエージェントを生成する確率
-
+        self.is_random_agent_n_reset = is_random_agent_n_reset  #ADD:リセット時のエージェント数をランダムにする
         self.field = np.zeros(field_size, np.int32)
 
         self.penalty = penalty
@@ -597,7 +598,7 @@ class ForagingEnv(gym.Env):
             # setting seed
             super().reset(seed=seed, options=options)
 
-        if self.is_variableN == True: #ADD1:エージェント可変が有効ならランダムに数を決定＆初期化
+        if self.is_variableN == True and self.is_random_agent_n_reset == True: #ADD1:エージェント可変が有効かつ、リセット時のエージェント数のランダム変更が有効ならランダムに数を決定＆初期化
             self.n_agent = np.random.randint(self.min_agents, self.max_agents) #ADD1:有効エージェントの数を決定
             possible_agent_ids = np.sort(np.random.choice(self.max_agents, size=self.n_agent, replace=False)) #ADD1:有効とするエージェントIDをランダムに決定
 
