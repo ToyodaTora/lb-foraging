@@ -843,6 +843,7 @@ class ForagingEnv(gym.Env):
                 self._gen_valid_moves()
                 break
             attempts += 1
+        print("適切なスペースがないのでこのエージェントの配置をスキップします")
 
     def set_agent_num(self, target_n):
         active = [p for p in self.players if p.is_possible]
