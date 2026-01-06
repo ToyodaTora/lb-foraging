@@ -843,7 +843,7 @@ class ForagingEnv(gym.Env):
                 self._gen_valid_moves()
                 break
             attempts += 1
-        print("適切なスペースがないのでこのエージェントの配置をスキップします")
+        print("十分なスペースがないのでこのエージェントの配置をスキップします")
 
     def set_agent_num(self, target_n):
         active = [p for p in self.players if p.is_possible]
@@ -858,3 +858,8 @@ class ForagingEnv(gym.Env):
             # activate
             for i in range(target_n - len(active)):
                 self.spawn_one_agent(self.min_player_level, self.max_player_level)
+    
+    #ADD1:残っている資源の数を返す            
+    def get_food_remaining(self):
+        remaining_food_num = np.count_nonzero(self.field)
+        return remaining_food_num
