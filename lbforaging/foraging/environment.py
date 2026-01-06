@@ -843,3 +843,17 @@ class ForagingEnv(gym.Env):
                 self._gen_valid_moves()
                 break
             attempts += 1
+
+    def set_agent_num(self, target_n):
+        active = [p for p in self.players if p.is_possible]
+        inactive = [p for p in self.players if not p.is_possible]
+        
+        if len(active) > target_n:
+            # deactivate
+            for i in range(len(active) - target_n):
+                self.remove_one_agent()
+
+        elif len(active) < target_n:
+            # activate
+            for i in range(target_n - len(active)):
+                self.spawn_one_agent(self.min_player_level, self.max_player_level)
