@@ -616,9 +616,14 @@ class ForagingEnv(gym.Env):
                 self.players[id].is_possible = True
         else: #ADD1:エージェント可変が無効なら全エージェントを有効にする
             self.n_agent = self.default_agents_num #ADD1:有効エージェントの数を決定
-            self.is_possible_agents = [ True for i in range(len(self.players))] #ADD1:各エージェントが有効かどうかを初期化
+            possible_agent_ids = np.sort(np.random.choice(self.max_agents, size=self.n_agent, replace=False)) #ADD1:有効とするエージェントIDをランダムに決定
+            self.is_possible_agents = [ False for i in range(len(self.players))] #ADD1:各エージェントが有効かどうかを初期化
+            
             for i in range(len(self.players)): #ADD1:各エージェントが有効かどうかを初期化 ←これ2種類の変数で管理する必要ある？
-                self.players[i].is_possible = True
+                self.players[i].is_possible = False
+            for id in possible_agent_ids: #ADD1:エージェントを有効化
+                self.is_possible_agents[id] = True
+                self.players[id].is_possible = True
 
         self.field = np.zeros(self.field_size, np.int32)
         self.spawn_players(self.min_player_level, self.max_player_level)
