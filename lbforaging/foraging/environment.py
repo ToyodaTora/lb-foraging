@@ -81,7 +81,8 @@ class ForagingEnv(gym.Env):
 
     def __init__(
         self,
-        players,
+        default_players,
+        max_players,
         min_players, #ADD1:最小のプレイヤー人数を指定
         min_player_level,
         max_player_level,
@@ -105,11 +106,11 @@ class ForagingEnv(gym.Env):
     ):
         self.logger = logging.getLogger(__name__)
         self.render_mode = render_mode
-        self.players = [Player(i) for i in range(players)]
-        print("agent ids : ",[self.players[i].agent_id for i in range(players)])
+        self.players = [Player(i) for i in range(max_players)]
+        print("agent ids : ",[self.players[i].agent_id for i in range(max_players)])
         
-        self.is_possible_agents = [ False for _ in range(players)] #ADD1:各エージェントが有効かどうかのリスト
-        self.max_agents = players #ADD1:最大エージェント数
+        self.is_possible_agents = [ False for _ in range(max_players)] #ADD1:各エージェントが有効かどうかのリスト
+        self.max_agents = max_players #ADD1:最大エージェント数
         self.min_agents = min_players #ADD1:最小エージェント数
         assert (
             self.min_agents > 0
@@ -119,7 +120,11 @@ class ForagingEnv(gym.Env):
 
         self.remove_agent_prov = remove_agent_prov #ADD1:エピソード中にエージェントを削除する確率
         self.create_agent_prov = create_agent_prov #ADD1:エピソード中にエージェントを生成する確率
-        self.is_random_agent_n_reset = is_random_agent_n_reset  #ADD:リセット時のエージェント数をランダムにする
+        self.is_random_agent_n_reset = is_random_agent_n_reset  #ADD:リセット時のエージェント数をランダムにするか
+        self.default_agents_num = default_players #ADD1:リセット時の開始エージェント数（リセットでランダムエージェント数でなければこの値を参照）
+        assert self.min_agents < self.default_agents_num, "default_players must be larger than max_players."
+        assert self.default_agents_num < self.max_agents, "default_players must be smaller than min_players."
+
         self.field = np.zeros(field_size, np.int32)
 
         self.penalty = penalty
@@ -156,19 +161,19 @@ class ForagingEnv(gym.Env):
 
         if isinstance(min_player_level, Iterable):
             assert (
-                len(min_player_level) == players
-            ), "min_player_level must be a scalar or a list of length players"
+                len(min_player_level) == max_players
+            ), "min_player_level must be a scalar or a list of length max_players"
             self.min_player_level = np.array(min_player_level)
         else:
-            self.min_player_level = np.array([min_player_level] * players)
+            self.min_player_level = np.array([min_player_level] * max_players)
 
         if isinstance(max_player_level, Iterable):
             assert (
-                len(max_player_level) == players
-            ), "max_player_level must be a scalar or a list of length players"
+                len(max_player_level) == max_players
+            ), "max_player_level must be a scalar or a list of length max_players"
             self.max_player_level = np.array(max_player_level)
         else:
-            self.max_player_level = np.array([max_player_level] * players)
+            self.max_player_level = np.array([max_player_level] * max_players)
 
         if self.max_player_level is not None:
             # check if min_player_level is less than max_player_level for each player
@@ -609,7 +614,7 @@ class ForagingEnv(gym.Env):
                 self.is_possible_agents[id] = True
                 self.players[id].is_possible = True
         else: #ADD1:エージェント可変が無効なら全エージェントを有効にする
-            self.n_agent = self.max_agents #ADD1:有効エージェントの数を決定
+            self.n_agent = self.default_agents_num #ADD1:有効エージェントの数を決定
             self.is_possible_agents = [ True for i in range(len(self.players))] #ADD1:各エージェントが有効かどうかを初期化
             for i in range(len(self.players)): #ADD1:各エージェントが有効かどうかを初期化 ←これ2種類の変数で管理する必要ある？
                 self.players[i].is_possible = True
