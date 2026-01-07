@@ -81,6 +81,7 @@ class ForagingEnv(gym.Env):
 
     def __init__(
         self,
+        players, #これを消すとエラーになる
         default_players, #デフォルトのエージェント数を指定
         max_players, #ADD1:最大のプレイヤー人数を指定
         min_players, #ADD1:最小のプレイヤー人数を指定
