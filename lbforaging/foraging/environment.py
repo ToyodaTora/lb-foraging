@@ -854,7 +854,9 @@ class ForagingEnv(gym.Env):
                 self._gen_valid_moves()
                 break
             attempts += 1
-        print("十分なスペースがないのでこのエージェントの配置をスキップします")
+        if attempts >= 1000:
+            print("Warning: Could not find empty location for spawning")
+            return 0
 
     def set_agent_num(self, target_n):
         active = [p for p in self.players if p.is_possible]
