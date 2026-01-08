@@ -589,7 +589,7 @@ class ForagingEnv(gym.Env):
                     (
                         layers[:, start_x:end_x, start_y:end_y]
                         if self.players[i].is_possible
-                        else -np.ones(
+                        else np.zeros(
                             (
                                 layers.shape[0],
                                 end_x - start_x,
