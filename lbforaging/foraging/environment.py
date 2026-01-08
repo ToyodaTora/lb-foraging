@@ -412,7 +412,7 @@ class ForagingEnv(gym.Env):
                         break
                     attempts += 1
             else: #ADD1:も無効エージェントならステージ外にいるとして初期化．
-                player.setup((-1, -1), -1, self.field_size)
+                player.setup((-1-self.sight, -1-self.sight), -1, self.field_size)
 
     def _is_valid_action(self, player, action):
 
@@ -539,12 +539,13 @@ class ForagingEnv(gym.Env):
             agents_layer = np.zeros(grid_shape, dtype=np.float32)
             for player in self.players:
                 player_x, player_y = player.position
-                if self._observe_agent_levels:
-                    agents_layer[player_x + self.sight, player_y + self.sight] = (
-                        player.level
-                    )
-                else:
-                    agents_layer[player_x + self.sight, player_y + self.sight] = 1
+                if player.is_possible:# ADD1:エージェントが有効ならエージェントレイヤーにその座標を書き込む
+                    if self._observe_agent_levels:
+                        agents_layer[player_x + self.sight, player_y + self.sight] = (
+                            player.level
+                        )
+                    else:
+                        agents_layer[player_x + self.sight, player_y + self.sight] = 1
 
             foods_layer = np.zeros(grid_shape, dtype=np.float32)
             foods_layer[self.sight : -self.sight, self.sight : -self.sight] = (
@@ -559,8 +560,9 @@ class ForagingEnv(gym.Env):
             access_layer[:, -self.sight :] = 0.0
             # agent locations are not accessible
             for player in self.players:
-                player_x, player_y = player.position
-                access_layer[player_x + self.sight, player_y + self.sight] = 0.0
+                if player.is_possible:# ADD1:エージェントが有効ならアクセスレイヤーの該当座標を０にする
+                    player_x, player_y = player.position
+                    access_layer[player_x + self.sight, player_y + self.sight] = 0.0
             # food locations are not accessible
             foods_x, foods_y = self.field.nonzero()
             for x, y in zip(foods_x, foods_y):
@@ -582,12 +584,24 @@ class ForagingEnv(gym.Env):
             agents_bounds = [
                 get_agent_grid_bounds(*player.position) for player in self.players
             ]
-            nobs = tuple(
+            nobs = tuple( #ADD1:エージェントが無効ならば-1で埋める処理
                 [
-                    layers[:, start_x:end_x, start_y:end_y]
-                    for start_x, end_x, start_y, end_y in agents_bounds
+                    (
+                        layers[:, start_x:end_x, start_y:end_y]
+                        if self.players[i].is_possible
+                        else -np.ones(
+                            (
+                                layers.shape[0],
+                                end_x - start_x,
+                                end_y - start_y,
+                            ),
+                            dtype=layers.dtype,
+                        )
+                    )
+                    for i, (start_x, end_x, start_y, end_y) in enumerate(agents_bounds)
                 ]
             )
+
         else: #ADD1:観測生成の関数の引数に，エージェントが有効かどうかを追加
             nobs = tuple([make_obs_array(obs, self.is_possible_agents[i]) for i, obs in enumerate(observations)])
 
@@ -806,7 +820,7 @@ class ForagingEnv(gym.Env):
         self.is_possible_agents[removed_id] = False
         self.players[removed_id].is_possible = False
 
-        self.players[removed_id].position = (-1, -1)
+        self.players[removed_id].position = (-1-self.sight, -1-self.sight)
         self.players[removed_id].level = -1
         self.players[removed_id].reward = 0
         self.players[removed_id].is_possible = False
