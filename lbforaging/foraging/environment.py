@@ -272,8 +272,11 @@ class ForagingEnv(gym.Env):
         high_obs = np.array(max_obs)
         assert low_obs.shape == high_obs.shape
         return gym.spaces.Box(
-            low=low_obs, high=high_obs, shape=[len(low_obs)], dtype=np.float32
+            low=low_obs.astype(np.float32),
+            high=high_obs.astype(np.float32),
+            dtype=np.float32
         )
+
 
     @property
     def field_size(self):
