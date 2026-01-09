@@ -659,7 +659,7 @@ class ForagingEnv(gym.Env):
         height, width = self.field.shape
         for y in range(height):
             for x in range(width):
-                self.map[y, x] = y * 100 + x
+                self.field[y, x] = y * 100 + x
         
         self.current_step = 0
         self._game_over = False
