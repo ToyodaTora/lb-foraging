@@ -653,14 +653,6 @@ class ForagingEnv(gym.Env):
             if self.max_food_level is not None
             else np.array([sum(player_levels[:3])] * self.max_num_food),
         )
-        
-        #ADD1：デバッグ用の初期化、消す必要がある。
-        
-        height, width = self.field.shape
-        for y in range(height):
-            for x in range(width):
-                self.field[y, x] = y * 100 + x
-        
         self.current_step = 0
         self._game_over = False
         self._gen_valid_moves()
