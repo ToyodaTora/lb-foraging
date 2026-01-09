@@ -655,8 +655,10 @@ class ForagingEnv(gym.Env):
         )
         
         #ADD1：デバッグ用の初期化、消す必要がある。
-        for y in range(self.height):
-            for x in range(self.width):
+        
+        height, width = self.field.shape
+        for y in range(height):
+            for x in range(width):
                 self.map[y, x] = y * 100 + x
         
         self.current_step = 0
