@@ -110,7 +110,6 @@ class ForagingEnv(gym.Env):
         self.players = [Player(i) for i in range(max_players)]
         print("agent ids : ",[self.players[i].agent_id for i in range(max_players)])
         
-        self.is_possible_agents = [ False for _ in range(max_players)] #ADD1:各エージェントが有効かどうかのリスト
         self.max_agents = max_players #ADD1:最大エージェント数
         self.min_agents = min_players #ADD1:最小エージェント数
         assert (
@@ -603,7 +602,7 @@ class ForagingEnv(gym.Env):
             )
 
         else: #ADD1:観測生成の関数の引数に，エージェントが有効かどうかを追加
-            nobs = tuple([make_obs_array(obs, self.is_possible_agents[i]) for i, obs in enumerate(observations)])
+            nobs = tuple([make_obs_array(obs, self.players[i].is_possible) for i, obs in enumerate(observations)])
 
         # check the space of obs
         for i, obs in enumerate(nobs):
@@ -625,21 +624,17 @@ class ForagingEnv(gym.Env):
             self.n_agent = np.random.randint(self.min_agents, self.max_agents) #ADD1:有効エージェントの数を決定
             possible_agent_ids = np.sort(np.random.choice(self.max_agents, size=self.n_agent, replace=False)) #ADD1:有効とするエージェントIDをランダムに決定
 
-            self.is_possible_agents = [ False for i in range(len(self.players))] #ADD1:各エージェントが有効かどうかを初期化
             for i in range(len(self.players)): #ADD1:各エージェントが有効かどうかを初期化 ←これ2種類の変数で管理する必要ある？
                 self.players[i].is_possible = False
             for id in possible_agent_ids: #ADD1:エージェントを有効化
-                self.is_possible_agents[id] = True
                 self.players[id].is_possible = True
         else: #ADD1:エージェント可変が無効なら全エージェントを有効にする
             self.n_agent = self.default_agents_num #ADD1:有効エージェントの数を決定
             possible_agent_ids = np.sort(np.random.choice(self.max_agents, size=self.n_agent, replace=False)) #ADD1:有効とするエージェントIDをランダムに決定
-            self.is_possible_agents = [ False for i in range(len(self.players))] #ADD1:各エージェントが有効かどうかを初期化
             
             for i in range(len(self.players)): #ADD1:各エージェントが有効かどうかを初期化 ←これ2種類の変数で管理する必要ある？
                 self.players[i].is_possible = False
             for id in possible_agent_ids: #ADD1:エージェントを有効化
-                self.is_possible_agents[id] = True
                 self.players[id].is_possible = True
 
         self.field = np.zeros(self.field_size, np.int32)
@@ -806,7 +801,7 @@ class ForagingEnv(gym.Env):
         possible_agents = []
         impossible_agent = []
         for agent_id in range(len(self.players)):
-            if self.is_possible_agents[agent_id] == True:
+            if self.players[agent_id].is_possible == True:
                 possible_agents.append(agent_id)
             else:
                 impossible_agent.append(agent_id)
@@ -818,7 +813,6 @@ class ForagingEnv(gym.Env):
         removed_id = np.random.choice(possible_agents)
 
         self.n_agent -= 1
-        self.is_possible_agents[removed_id] = False
         self.players[removed_id].is_possible = False
 
         self.players[removed_id].position = (-1-self.sight, -1-self.sight)
@@ -837,7 +831,7 @@ class ForagingEnv(gym.Env):
         possible_agents = []
         impossible_agent = []
         for agent_id in range(len(self.players)):
-            if self.is_possible_agents[agent_id] == True:
+            if self.players[agent_id].is_possible == True:
                 possible_agents.append(agent_id)
             else:
                 impossible_agent.append(agent_id)
@@ -854,7 +848,6 @@ class ForagingEnv(gym.Env):
             col = self.np_random.integers(0, self.cols)
             if self._is_empty_location(row, col):
                 self.n_agent += 1
-                self.is_possible_agents[spawn_id] = True
                 self.players[spawn_id].is_possible = True
 
                 self.players[spawn_id].reward = 0
