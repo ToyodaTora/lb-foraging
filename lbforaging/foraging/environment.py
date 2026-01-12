@@ -108,7 +108,6 @@ class ForagingEnv(gym.Env):
         self.logger = logging.getLogger(__name__)
         self.render_mode = render_mode
         self.players = [Player(i) for i in range(max_players)]
-        print("agent ids : ",[self.players[i].agent_id for i in range(max_players)])
         
         self.max_agents = max_players #ADD1:最大エージェント数
         self.min_agents = min_players #ADD1:最小エージェント数
