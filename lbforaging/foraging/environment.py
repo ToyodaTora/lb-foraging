@@ -121,8 +121,8 @@ class ForagingEnv(gym.Env):
         self.create_agent_prov = create_agent_prov #ADD1:エピソード中にエージェントを生成する確率
         self.is_random_agent_n_reset = is_random_agent_n_reset  #ADD:リセット時のエージェント数をランダムにするか
         self.default_agents_num = default_players #ADD1:リセット時の開始エージェント数（リセットでランダムエージェント数でなければこの値を参照）
-        assert self.min_agents < self.default_agents_num, "default_players must be larger than max_players."
-        assert self.default_agents_num < self.max_agents, "default_players must be smaller than min_players."
+        assert self.min_agents <= self.default_agents_num, "default_players must be larger than max_players."
+        assert self.default_agents_num <= self.max_agents, "default_players must be smaller than min_players."
 
         self.field = np.zeros(field_size, np.int32)
 
